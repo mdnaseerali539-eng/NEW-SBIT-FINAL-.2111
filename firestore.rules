@@ -1,0 +1,579 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedEmail() {
+      return isSignedIn()
+        && request.auth.token.email_verified == true
+        && request.auth.token.email is string
+        && request.auth.token.email.size() >= 3
+        && request.auth.token.email.size() <= 200;
+    }
+
+    function callerEmail() {
+      return request.auth.token.email.lower();
+    }
+
+    function isAdmin() {
+      return isVerifiedEmail() && callerEmail() == 'mdnaseerali539@gmail.com';
+    }
+
+    function isOptString(val, maxLen) {
+      return val == null || (val is string && val.size() <= maxLen);
+    }
+
+    function isReqString(val, minLen, maxLen) {
+      return val is string && val.size() >= minLen && val.size() <= maxLen;
+    }
+
+    function isValidSystemCatalog(data) {
+      return data.keys().hasAll([
+          'id', 'collegeSettings', 'departments', 'academicYears',
+          'semesters', 'classes', 'subjects', 'holidays',
+          'calendarOverrides', 'registrationQrCodes', 'jntuhRegulationRules', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'collegeSettings', 'departments', 'academicYears',
+          'semesters', 'classes', 'subjects', 'holidays',
+          'calendarOverrides', 'registrationQrCodes', 'jntuhRegulationRules', 'updatedAt'
+        ])
+        && isValidId(data.id)
+        && data.collegeSettings is map
+        && data.departments is list && data.departments.size() <= 100
+        && data.academicYears is list && data.academicYears.size() <= 20
+        && data.semesters is list && data.semesters.size() <= 30
+        && data.classes is list && data.classes.size() <= 500
+        && data.subjects is list && data.subjects.size() <= 1000
+        && data.holidays is list && data.holidays.size() <= 500
+        && data.calendarOverrides is list && data.calendarOverrides.size() <= 500
+        && data.registrationQrCodes is list && data.registrationQrCodes.size() <= 500
+        && data.jntuhRegulationRules is list && data.jntuhRegulationRules.size() <= 50
+        && data.updatedAt == request.time;
+    }
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll([
+          'id', 'firebaseUid', 'role', 'fullName', 'email',
+          'phone', 'rollNumber', 'employeeId', 'status',
+          'emailVerified', 'rejectionReason', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'firebaseUid', 'role', 'fullName', 'email',
+          'phone', 'rollNumber', 'employeeId', 'status',
+          'emailVerified', 'rejectionReason', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.id)
+        && isOptString(data.firebaseUid, 128)
+        && data.role in ['super_admin', 'staff', 'student']
+        && (data.role != 'super_admin' || data.email == 'mdnaseerali539@gmail.com')
+        && isReqString(data.fullName, 1, 160)
+        && isReqString(data.email, 3, 200)
+        && isOptString(data.phone, 30)
+        && isOptString(data.rollNumber, 50)
+        && isOptString(data.employeeId, 50)
+        && data.status in ['pending', 'approved', 'rejected', 'deactivated']
+        && data.emailVerified is bool
+        && isOptString(data.rejectionReason, 500)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidStudentEnrollment(data) {
+      return data.keys().hasAll([
+          'id', 'studentId', 'studentEmail', 'firebaseUid', 'rollNumber',
+          'departmentId', 'academicYearId', 'semesterId', 'classId',
+          'isActive', 'approvalRequired', 'regulation', 'academicStanding',
+          'creditsEarned', 'totalCreditsAttempted', 'activeBacklogs',
+          'latestResultStatus', 'detentionReason', 'joinedDateIST',
+          'approvedBy', 'approvedAt', 'lastPromotedAt', 'enrolledAt',
+          'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'studentId', 'studentEmail', 'firebaseUid', 'rollNumber',
+          'departmentId', 'academicYearId', 'semesterId', 'classId',
+          'isActive', 'approvalRequired', 'regulation', 'academicStanding',
+          'creditsEarned', 'totalCreditsAttempted', 'activeBacklogs',
+          'latestResultStatus', 'detentionReason', 'joinedDateIST',
+          'approvedBy', 'approvedAt', 'lastPromotedAt', 'enrolledAt',
+          'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.id)
+        && isValidId(data.studentId)
+        && isReqString(data.studentEmail, 3, 200)
+        && isOptString(data.firebaseUid, 128)
+        && isReqString(data.rollNumber, 2, 50)
+        && isValidId(data.departmentId)
+        && isValidId(data.academicYearId)
+        && isValidId(data.semesterId)
+        && isValidId(data.classId)
+        && data.isActive is bool
+        && data.approvalRequired is bool
+        && isReqString(data.regulation, 2, 20)
+        && data.academicStanding in ['active', 'detained', 'graduated']
+        && data.creditsEarned is int
+        && data.totalCreditsAttempted is int
+        && data.activeBacklogs is int
+        && isReqString(data.latestResultStatus, 1, 40)
+        && isOptString(data.detentionReason, 500)
+        && isOptString(data.joinedDateIST, 20)
+        && isOptString(data.approvedBy, 128)
+        && isOptString(data.approvedAt, 64)
+        && isOptString(data.lastPromotedAt, 64)
+        && isReqString(data.enrolledAt, 1, 64)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidBiometricTemplate(data) {
+      return data.keys().hasAll([
+          'id', 'studentId', 'studentEmail', 'firebaseUid',
+          'encryptedDescriptor', 'iv', 'authTag', 'algorithm',
+          'sampleCount', 'consentGiven', 'consentTimestamp',
+          'retentionPolicyVersion', 'isActive', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'studentId', 'studentEmail', 'firebaseUid',
+          'encryptedDescriptor', 'iv', 'authTag', 'algorithm',
+          'sampleCount', 'consentGiven', 'consentTimestamp',
+          'retentionPolicyVersion', 'isActive', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.id)
+        && isValidId(data.studentId)
+        && isReqString(data.studentEmail, 3, 200)
+        && isOptString(data.firebaseUid, 128)
+        && isReqString(data.encryptedDescriptor, 1, 16000)
+        && isReqString(data.iv, 1, 256)
+        && isReqString(data.authTag, 1, 256)
+        && isReqString(data.algorithm, 1, 80)
+        && data.sampleCount is int
+        && data.sampleCount >= 1
+        && data.sampleCount <= 10
+        && data.consentGiven == true
+        && isReqString(data.consentTimestamp, 1, 64)
+        && isReqString(data.retentionPolicyVersion, 1, 64)
+        && data.isActive is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidClassSessionBucket(data) {
+      return data.keys().hasAll(['id', 'classId', 'departmentId', 'monthKey', 'sessions', 'updatedAt'])
+        && data.keys().hasOnly(['id', 'classId', 'departmentId', 'monthKey', 'sessions', 'updatedAt'])
+        && isValidId(data.id)
+        && isValidId(data.classId)
+        && isValidId(data.departmentId)
+        && isReqString(data.monthKey, 7, 10)
+        && data.sessions is list
+        && data.sessions.size() <= 400
+        && data.updatedAt == request.time;
+    }
+
+    function isValidAttendanceRecord(data) {
+      return data.keys().hasAll([
+          'id', 'studentId', 'studentEmail', 'firebaseUid', 'sessionId',
+          'departmentId', 'classId', 'subjectId', 'academicYearId', 'semesterId',
+          'attendanceDate', 'markedAt', 'status', 'verificationMethod',
+          'verificationResult', 'faceConfidence', 'livenessPassed',
+          'latitude', 'longitude', 'geofenceDistanceM',
+          'correctionReason', 'correctedBy', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'studentId', 'studentEmail', 'firebaseUid', 'sessionId',
+          'departmentId', 'classId', 'subjectId', 'academicYearId', 'semesterId',
+          'attendanceDate', 'markedAt', 'status', 'verificationMethod',
+          'verificationResult', 'faceConfidence', 'livenessPassed',
+          'latitude', 'longitude', 'geofenceDistanceM',
+          'correctionReason', 'correctedBy', 'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.id)
+        && isValidId(data.studentId)
+        && isReqString(data.studentEmail, 3, 200)
+        && isOptString(data.firebaseUid, 128)
+        && isValidId(data.sessionId)
+        && isValidId(data.departmentId)
+        && isValidId(data.classId)
+        && isOptString(data.subjectId, 128)
+        && isOptString(data.academicYearId, 128)
+        && isOptString(data.semesterId, 128)
+        && isReqString(data.attendanceDate, 10, 10)
+        && isReqString(data.markedAt, 1, 64)
+        && data.status in ['present', 'absent', 'excused']
+        && isReqString(data.verificationMethod, 1, 64)
+        && isReqString(data.verificationResult, 1, 64)
+        && (data.faceConfidence == null || data.faceConfidence is number)
+        && data.livenessPassed is bool
+        && (data.latitude == null || data.latitude is number)
+        && (data.longitude == null || data.longitude is number)
+        && (data.geofenceDistanceM == null || data.geofenceDistanceM is number)
+        && isOptString(data.correctionReason, 500)
+        && isOptString(data.correctedBy, 128)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidStaffAssignment(data) {
+      return data.keys().hasAll([
+          'id', 'staffId', 'staffEmail', 'firebaseUid', 'departmentId',
+          'classId', 'subjectId', 'canCreateSessions', 'isActive',
+          'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'staffId', 'staffEmail', 'firebaseUid', 'departmentId',
+          'classId', 'subjectId', 'canCreateSessions', 'isActive',
+          'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.id)
+        && isValidId(data.staffId)
+        && isReqString(data.staffEmail, 3, 200)
+        && isOptString(data.firebaseUid, 128)
+        && isValidId(data.departmentId)
+        && isOptString(data.classId, 128)
+        && isOptString(data.subjectId, 128)
+        && data.canCreateSessions is bool
+        && data.isActive is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAttendanceCorrection(data) {
+      return data.keys().hasAll([
+          'id', 'studentId', 'studentEmail', 'firebaseUid', 'sessionId',
+          'requestedBy', 'requestedStatus', 'requestType', 'reason',
+          'status', 'reviewedBy', 'reviewNote', 'reviewedAt',
+          'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'studentId', 'studentEmail', 'firebaseUid', 'sessionId',
+          'requestedBy', 'requestedStatus', 'requestType', 'reason',
+          'status', 'reviewedBy', 'reviewNote', 'reviewedAt',
+          'createdAt', 'updatedAt'
+        ])
+        && isValidId(data.id)
+        && isValidId(data.studentId)
+        && isReqString(data.studentEmail, 3, 200)
+        && isOptString(data.firebaseUid, 128)
+        && isValidId(data.sessionId)
+        && isValidId(data.requestedBy)
+        && data.requestedStatus in ['present', 'absent', 'excused']
+        && data.requestType in ['correction', 'location_bypass', 'liveness_assisted']
+        && isReqString(data.reason, 1, 500)
+        && data.status in ['pending', 'approved', 'rejected']
+        && isOptString(data.reviewedBy, 128)
+        && isOptString(data.reviewNote, 500)
+        && isOptString(data.reviewedAt, 64)
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidAcademicHistory(data) {
+      return data.keys().hasAll([
+          'id', 'studentId', 'studentEmail', 'firebaseUid', 'academicYearId',
+          'semesterId', 'departmentId', 'classId', 'regulation',
+          'attendancePercentage', 'workingDays', 'presentDays',
+          'creditsEarned', 'creditsAttempted', 'activeBacklogs',
+          'resultStatus', 'status', 'remarks', 'recordedAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id', 'studentId', 'studentEmail', 'firebaseUid', 'academicYearId',
+          'semesterId', 'departmentId', 'classId', 'regulation',
+          'attendancePercentage', 'workingDays', 'presentDays',
+          'creditsEarned', 'creditsAttempted', 'activeBacklogs',
+          'resultStatus', 'status', 'remarks', 'recordedAt', 'updatedAt'
+        ])
+        && isValidId(data.id)
+        && isValidId(data.studentId)
+        && isReqString(data.studentEmail, 3, 200)
+        && isOptString(data.firebaseUid, 128)
+        && isValidId(data.academicYearId)
+        && isValidId(data.semesterId)
+        && isValidId(data.departmentId)
+        && isValidId(data.classId)
+        && isReqString(data.regulation, 2, 20)
+        && (data.attendancePercentage == null || data.attendancePercentage is number)
+        && data.workingDays is int
+        && data.presentDays is int
+        && data.creditsEarned is int
+        && data.creditsAttempted is int
+        && data.activeBacklogs is int
+        && isReqString(data.resultStatus, 1, 40)
+        && isReqString(data.status, 1, 40)
+        && isOptString(data.remarks, 500)
+        && isReqString(data.recordedAt, 1, 64)
+        && data.updatedAt is timestamp;
+    }
+
+    match /systemCatalog/{catalogId} {
+      allow get: if isValidId(catalogId) && (catalogId == 'college' || isAdmin());
+      allow list: if isAdmin();
+      allow create, update: if isAdmin()
+        && isValidId(catalogId)
+        && isValidSystemCatalog(incoming());
+      allow delete: if isAdmin() && isValidId(catalogId);
+    }
+
+    match /users/{profileId} {
+      allow get: if isVerifiedEmail() && isValidId(profileId) && (
+        isAdmin()
+        || existing().firebaseUid == request.auth.uid
+        || existing().email == callerEmail()
+      );
+      allow list: if isVerifiedEmail() && (
+        isAdmin()
+        || existing().firebaseUid == request.auth.uid
+        || existing().email == callerEmail()
+      );
+      allow create: if isVerifiedEmail()
+        && isValidId(profileId)
+        && isValidUserProfile(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin()
+          || (
+            incoming().role == 'student'
+            && incoming().email == callerEmail()
+            && incoming().firebaseUid == request.auth.uid
+            && incoming().status in ['pending', 'approved']
+          )
+        );
+      allow update: if isVerifiedEmail()
+        && isValidId(profileId)
+        && isValidUserProfile(incoming())
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin()
+          || (
+            (existing().firebaseUid == request.auth.uid || existing().email == callerEmail())
+            && incoming().diff(existing()).affectedKeys().hasOnly(['firebaseUid', 'emailVerified', 'updatedAt'])
+            && incoming().firebaseUid == request.auth.uid
+            && incoming().role == existing().role
+            && incoming().status == existing().status
+            && incoming().email == existing().email
+          )
+        );
+      allow delete: if isAdmin()
+        && isValidId(profileId)
+        && existing().email != 'mdnaseerali539@gmail.com';
+    }
+
+    match /studentEnrollments/{profileId} {
+      allow get: if isVerifiedEmail() && isValidId(profileId) && (
+        isAdmin()
+        || existing().firebaseUid == request.auth.uid
+        || existing().studentEmail == callerEmail()
+      );
+      allow list: if isVerifiedEmail() && (
+        isAdmin()
+        || existing().firebaseUid == request.auth.uid
+        || existing().studentEmail == callerEmail()
+      );
+      allow create: if isVerifiedEmail()
+        && isValidId(profileId)
+        && isValidStudentEnrollment(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin()
+          || (
+            incoming().studentEmail == callerEmail()
+            && incoming().firebaseUid == request.auth.uid
+          )
+        );
+      allow update: if isVerifiedEmail()
+        && isValidId(profileId)
+        && isValidStudentEnrollment(incoming())
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin()
+          || (
+            existing().studentEmail == callerEmail()
+            && incoming().diff(existing()).affectedKeys().hasOnly(['firebaseUid', 'updatedAt'])
+            && incoming().firebaseUid == request.auth.uid
+          )
+        );
+      allow delete: if isAdmin() && isValidId(profileId);
+    }
+
+    match /biometricTemplates/{profileId} {
+      allow get: if isVerifiedEmail() && isValidId(profileId) && (
+        isAdmin()
+        || existing().firebaseUid == request.auth.uid
+        || existing().studentEmail == callerEmail()
+      );
+      allow list: if isVerifiedEmail() && (
+        isAdmin()
+        || existing().firebaseUid == request.auth.uid
+        || existing().studentEmail == callerEmail()
+      );
+      allow create: if isVerifiedEmail()
+        && isValidId(profileId)
+        && isValidBiometricTemplate(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin()
+          || (incoming().studentEmail == callerEmail() && incoming().firebaseUid == request.auth.uid)
+        );
+      allow update: if isVerifiedEmail()
+        && isValidId(profileId)
+        && isValidBiometricTemplate(incoming())
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin()
+          || (
+            (existing().firebaseUid == request.auth.uid || existing().studentEmail == callerEmail())
+            && incoming().diff(existing()).affectedKeys().hasOnly([
+              'encryptedDescriptor', 'iv', 'authTag', 'algorithm', 'sampleCount',
+              'consentGiven', 'consentTimestamp', 'retentionPolicyVersion',
+              'isActive', 'firebaseUid', 'updatedAt'
+            ])
+            && incoming().firebaseUid == request.auth.uid
+            && incoming().studentEmail == existing().studentEmail
+            && incoming().studentId == existing().studentId
+          )
+        );
+      allow delete: if isVerifiedEmail() && isValidId(profileId) && (
+        isAdmin()
+        || existing().firebaseUid == request.auth.uid
+        || existing().studentEmail == callerEmail()
+      );
+    }
+
+    match /classSessionBuckets/{bucketId} {
+      allow get: if isVerifiedEmail() && isValidId(bucketId);
+      allow list: if isAdmin();
+      allow create, update: if isAdmin()
+        && isValidId(bucketId)
+        && isValidClassSessionBucket(incoming());
+      allow delete: if isAdmin() && isValidId(bucketId);
+    }
+
+    match /attendanceRecords/{recordId} {
+      allow get: if isVerifiedEmail() && isValidId(recordId) && (
+        isAdmin()
+        || existing().firebaseUid == request.auth.uid
+        || existing().studentEmail == callerEmail()
+      );
+      allow list: if isVerifiedEmail() && (
+        isAdmin()
+        || existing().firebaseUid == request.auth.uid
+        || existing().studentEmail == callerEmail()
+      );
+      allow create: if isVerifiedEmail()
+        && isValidId(recordId)
+        && isValidAttendanceRecord(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin()
+          || (
+            incoming().studentEmail == callerEmail()
+            && incoming().firebaseUid == request.auth.uid
+            && incoming().status == 'present'
+          )
+        );
+      allow update: if isAdmin()
+        && isValidId(recordId)
+        && isValidAttendanceRecord(incoming())
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time;
+      allow delete: if isAdmin() && isValidId(recordId);
+    }
+
+    match /staffAssignments/{assignmentId} {
+      allow get: if isVerifiedEmail() && isValidId(assignmentId) && (
+        isAdmin()
+        || existing().firebaseUid == request.auth.uid
+        || existing().staffEmail == callerEmail()
+      );
+      allow list: if isVerifiedEmail() && (
+        isAdmin()
+        || existing().firebaseUid == request.auth.uid
+        || existing().staffEmail == callerEmail()
+      );
+      allow create: if isAdmin()
+        && isValidId(assignmentId)
+        && isValidStaffAssignment(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isAdmin()
+        && isValidId(assignmentId)
+        && isValidStaffAssignment(incoming())
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time;
+      allow delete: if isAdmin() && isValidId(assignmentId);
+    }
+
+    match /attendanceCorrections/{correctionId} {
+      allow get: if isVerifiedEmail() && isValidId(correctionId) && (
+        isAdmin()
+        || existing().firebaseUid == request.auth.uid
+        || existing().studentEmail == callerEmail()
+      );
+      allow list: if isVerifiedEmail() && (
+        isAdmin()
+        || existing().firebaseUid == request.auth.uid
+        || existing().studentEmail == callerEmail()
+      );
+      allow create: if isVerifiedEmail()
+        && isValidId(correctionId)
+        && isValidAttendanceCorrection(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+        && (
+          isAdmin()
+          || (
+            incoming().studentEmail == callerEmail()
+            && incoming().firebaseUid == request.auth.uid
+            && incoming().status == 'pending'
+          )
+        );
+      allow update: if isAdmin()
+        && isValidId(correctionId)
+        && isValidAttendanceCorrection(incoming())
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time;
+      allow delete: if isAdmin() && isValidId(correctionId);
+    }
+
+    match /studentAcademicHistory/{historyId} {
+      allow get: if isVerifiedEmail() && isValidId(historyId) && (
+        isAdmin()
+        || existing().firebaseUid == request.auth.uid
+        || existing().studentEmail == callerEmail()
+      );
+      allow list: if isVerifiedEmail() && (
+        isAdmin()
+        || existing().firebaseUid == request.auth.uid
+        || existing().studentEmail == callerEmail()
+      );
+      allow create, update: if isAdmin()
+        && isValidId(historyId)
+        && isValidAcademicHistory(incoming())
+        && incoming().updatedAt == request.time;
+      allow delete: if isAdmin() && isValidId(historyId);
+    }
+  }
+}

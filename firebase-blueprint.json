@@ -1,0 +1,255 @@
+{
+  "entities": {
+    "SystemCatalog": {
+      "title": "SystemCatalog",
+      "description": "Non-PII institutional catalog containing college settings, departments, academic years, semesters, classes, subjects, holidays, calendar overrides, QR metadata, and regulation rules.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "collegeSettings": { "type": "object" },
+        "departments": { "type": "array" },
+        "academicYears": { "type": "array" },
+        "semesters": { "type": "array" },
+        "classes": { "type": "array" },
+        "subjects": { "type": "array" },
+        "holidays": { "type": "array" },
+        "calendarOverrides": { "type": "array" },
+        "registrationQrCodes": { "type": "array" },
+        "jntuhRegulationRules": { "type": "array" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "collegeSettings", "departments", "academicYears", "semesters", "classes", "subjects", "updatedAt"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Portal user profile across permanent super_admin, staff, and student roles.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "firebaseUid": { "type": "string", "maxLength": 128 },
+        "role": { "type": "string", "enum": ["super_admin", "staff", "student"], "maxLength": 20 },
+        "fullName": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "email": { "type": "string", "format": "email", "minLength": 3, "maxLength": 200 },
+        "phone": { "type": "string", "maxLength": 30 },
+        "rollNumber": { "type": "string", "maxLength": 50 },
+        "employeeId": { "type": "string", "maxLength": 50 },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected", "deactivated"], "maxLength": 20 },
+        "emailVerified": { "type": "boolean" },
+        "rejectionReason": { "type": "string", "maxLength": 500 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "role", "fullName", "email", "status", "emailVerified", "createdAt", "updatedAt"]
+    },
+    "StudentEnrollment": {
+      "title": "StudentEnrollment",
+      "description": "Student academic enrollment binding a student profile to department, year, semester, and class.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "studentId": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "studentEmail": { "type": "string", "format": "email", "minLength": 3, "maxLength": 200 },
+        "firebaseUid": { "type": "string", "maxLength": 128 },
+        "rollNumber": { "type": "string", "minLength": 2, "maxLength": 50 },
+        "departmentId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "academicYearId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "semesterId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "classId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "isActive": { "type": "boolean" },
+        "approvalRequired": { "type": "boolean" },
+        "regulation": { "type": "string", "maxLength": 20 },
+        "academicStanding": { "type": "string", "enum": ["active", "detained", "graduated"], "maxLength": 20 },
+        "creditsEarned": { "type": "integer" },
+        "totalCreditsAttempted": { "type": "integer" },
+        "activeBacklogs": { "type": "integer" },
+        "latestResultStatus": { "type": "string", "maxLength": 40 },
+        "detentionReason": { "type": "string", "maxLength": 500 },
+        "joinedDateIST": { "type": "string", "maxLength": 20 },
+        "approvedBy": { "type": "string", "maxLength": 128 },
+        "approvedAt": { "type": "string", "maxLength": 64 },
+        "lastPromotedAt": { "type": "string", "maxLength": 64 },
+        "enrolledAt": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "studentId", "studentEmail", "rollNumber", "departmentId", "academicYearId", "semesterId", "classId", "isActive", "approvalRequired", "createdAt", "updatedAt"]
+    },
+    "BiometricTemplate": {
+      "title": "BiometricTemplate",
+      "description": "AES-256-GCM encrypted facial descriptor template owned by a student.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "studentId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "studentEmail": { "type": "string", "format": "email", "minLength": 3, "maxLength": 200 },
+        "firebaseUid": { "type": "string", "maxLength": 128 },
+        "encryptedDescriptor": { "type": "string", "minLength": 1, "maxLength": 16000 },
+        "iv": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "authTag": { "type": "string", "minLength": 1, "maxLength": 256 },
+        "algorithm": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "sampleCount": { "type": "integer" },
+        "consentGiven": { "type": "boolean" },
+        "consentTimestamp": { "type": "string", "maxLength": 64 },
+        "retentionPolicyVersion": { "type": "string", "maxLength": 64 },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "studentId", "studentEmail", "encryptedDescriptor", "iv", "authTag", "algorithm", "sampleCount", "consentGiven", "isActive", "createdAt", "updatedAt"]
+    },
+    "ClassSessionBucket": {
+      "title": "ClassSessionBucket",
+      "description": "Monthly attendance sessions grouped by classId and month (non-PII).",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "classId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "departmentId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "monthKey": { "type": "string", "minLength": 7, "maxLength": 10 },
+        "sessions": { "type": "array" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "classId", "departmentId", "monthKey", "sessions", "updatedAt"]
+    },
+    "AttendanceRecord": {
+      "title": "AttendanceRecord",
+      "description": "Verified student attendance record for a session.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "studentId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "studentEmail": { "type": "string", "format": "email", "minLength": 3, "maxLength": 200 },
+        "firebaseUid": { "type": "string", "maxLength": 128 },
+        "sessionId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "departmentId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "classId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "subjectId": { "type": "string", "maxLength": 128 },
+        "academicYearId": { "type": "string", "maxLength": 128 },
+        "semesterId": { "type": "string", "maxLength": 128 },
+        "attendanceDate": { "type": "string", "minLength": 10, "maxLength": 10 },
+        "markedAt": { "type": "string", "maxLength": 64 },
+        "status": { "type": "string", "enum": ["present", "absent", "excused"], "maxLength": 20 },
+        "verificationMethod": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "verificationResult": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "faceConfidence": { "type": "number" },
+        "livenessPassed": { "type": "boolean" },
+        "latitude": { "type": "number" },
+        "longitude": { "type": "number" },
+        "geofenceDistanceM": { "type": "number" },
+        "correctionReason": { "type": "string", "maxLength": 500 },
+        "correctedBy": { "type": "string", "maxLength": 128 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "studentId", "studentEmail", "sessionId", "departmentId", "classId", "attendanceDate", "markedAt", "status", "verificationMethod", "verificationResult", "livenessPassed", "createdAt", "updatedAt"]
+    },
+    "StaffAssignment": {
+      "title": "StaffAssignment",
+      "description": "Faculty assignment scoping staff access to department, class, and subject.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "staffId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "staffEmail": { "type": "string", "format": "email", "minLength": 3, "maxLength": 200 },
+        "firebaseUid": { "type": "string", "maxLength": 128 },
+        "departmentId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "classId": { "type": "string", "maxLength": 128 },
+        "subjectId": { "type": "string", "maxLength": 128 },
+        "canCreateSessions": { "type": "boolean" },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "staffId", "staffEmail", "departmentId", "canCreateSessions", "isActive", "createdAt", "updatedAt"]
+    },
+    "AttendanceCorrection": {
+      "title": "AttendanceCorrection",
+      "description": "Attendance override or correction request.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "studentId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "studentEmail": { "type": "string", "format": "email", "minLength": 3, "maxLength": 200 },
+        "firebaseUid": { "type": "string", "maxLength": 128 },
+        "sessionId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "requestedBy": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "requestedStatus": { "type": "string", "maxLength": 20 },
+        "requestType": { "type": "string", "maxLength": 40 },
+        "reason": { "type": "string", "minLength": 1, "maxLength": 500 },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"], "maxLength": 20 },
+        "reviewedBy": { "type": "string", "maxLength": 128 },
+        "reviewNote": { "type": "string", "maxLength": 500 },
+        "reviewedAt": { "type": "string", "maxLength": 64 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "studentId", "studentEmail", "sessionId", "requestedBy", "requestedStatus", "requestType", "reason", "status", "createdAt", "updatedAt"]
+    },
+    "StudentAcademicHistory": {
+      "title": "StudentAcademicHistory",
+      "description": "Preserved semester progression snapshot for a student.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "minLength": 1, "maxLength": 128, "pattern": "^[a-zA-Z0-9_\\-]+$" },
+        "studentId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "studentEmail": { "type": "string", "format": "email", "minLength": 3, "maxLength": 200 },
+        "firebaseUid": { "type": "string", "maxLength": 128 },
+        "academicYearId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "semesterId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "departmentId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "classId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "regulation": { "type": "string", "maxLength": 20 },
+        "attendancePercentage": { "type": "number" },
+        "workingDays": { "type": "integer" },
+        "presentDays": { "type": "integer" },
+        "creditsEarned": { "type": "integer" },
+        "creditsAttempted": { "type": "integer" },
+        "activeBacklogs": { "type": "integer" },
+        "resultStatus": { "type": "string", "maxLength": 40 },
+        "status": { "type": "string", "maxLength": 40 },
+        "remarks": { "type": "string", "maxLength": 500 },
+        "recordedAt": { "type": "string", "maxLength": 64 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "studentId", "studentEmail", "academicYearId", "semesterId", "departmentId", "classId", "regulation", "resultStatus", "status", "recordedAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/systemCatalog/{catalogId}": {
+      "schema": { "$ref": "#/entities/SystemCatalog" },
+      "description": "Non-PII college settings, departments, classes, subjects, holidays, overrides, and QR code metadata."
+    },
+    "/users/{profileId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User accounts for the single permanent super_admin (mdnaseerali539@gmail.com), staff, and students."
+    },
+    "/studentEnrollments/{profileId}": {
+      "schema": { "$ref": "#/entities/StudentEnrollment" },
+      "description": "Student academic enrollments."
+    },
+    "/biometricTemplates/{profileId}": {
+      "schema": { "$ref": "#/entities/BiometricTemplate" },
+      "description": "Encrypted facial biometric templates per student."
+    },
+    "/classSessionBuckets/{bucketId}": {
+      "schema": { "$ref": "#/entities/ClassSessionBucket" },
+      "description": "Monthly attendance sessions grouped by classId and YYYY_MM."
+    },
+    "/attendanceRecords/{recordId}": {
+      "schema": { "$ref": "#/entities/AttendanceRecord" },
+      "description": "Attendance check-in records per student and session."
+    },
+    "/staffAssignments/{assignmentId}": {
+      "schema": { "$ref": "#/entities/StaffAssignment" },
+      "description": "Faculty department/class/subject assignments."
+    },
+    "/attendanceCorrections/{correctionId}": {
+      "schema": { "$ref": "#/entities/AttendanceCorrection" },
+      "description": "Attendance correction and bypass requests."
+    },
+    "/studentAcademicHistory/{historyId}": {
+      "schema": { "$ref": "#/entities/StudentAcademicHistory" },
+      "description": "Historical semester progression snapshots per student."
+    }
+  }
+}
